@@ -16,12 +16,14 @@ const US_STATES = [
 
 const STEPS = [
   { id: 1, label: "Location", icon: "📍" },
-  { id: 2, label: "Employment", icon: "💼" },
-  { id: 3, label: "Income", icon: "💰" },
-  { id: 4, label: "Dependents", icon: "👨‍👩‍👧‍👦" },
-  { id: 5, label: "Housing", icon: "🏠" },
-  { id: 6, label: "Disability", icon: "♿" },
-  { id: 7, label: "Review", icon: "✅" },
+  { id: 2, label: "Demographics", icon: "👤" },
+  { id: 3, label: "Special Status", icon: "⭐" },
+  { id: 4, label: "Employment", icon: "💼" },
+  { id: 5, label: "Income", icon: "💰" },
+  { id: 6, label: "Dependents", icon: "👨‍👩‍👧‍👦" },
+  { id: 7, label: "Housing", icon: "🏠" },
+  { id: 8, label: "Disability", icon: "♿" },
+  { id: 9, label: "Review", icon: "✅" },
 ];
 
 const EMPLOYMENT_OPTIONS = [
@@ -69,9 +71,15 @@ export default function IntakePage() {
 
   const [form, setForm] = useState({
     location: "",
+    age: "",
+    gender: "",
+    is_pregnant: false,
+    is_student: false,
     employment_status: "",
     income_range: "",
     dependents: 0,
+    has_dependents_under_5: false,
+    has_dependents_under_19: false,
     housing_status: "",
     disability_status: "none",
     additional_info: "",
@@ -85,18 +93,20 @@ export default function IntakePage() {
   const canProceed = () => {
     switch (step) {
       case 1: return form.location !== "";
-      case 2: return form.employment_status !== "";
-      case 3: return form.income_range !== "";
-      case 4: return true;
-      case 5: return form.housing_status !== "";
+      case 2: return form.age !== "" && form.gender !== "";
+      case 3: return true; // special status is optional toggles
+      case 4: return form.employment_status !== "";
+      case 5: return form.income_range !== "";
       case 6: return true;
-      case 7: return true;
+      case 7: return form.housing_status !== "";
+      case 8: return true;
+      case 9: return true;
       default: return false;
     }
   };
 
   const nextStep = () => {
-    if (canProceed() && step < 7) setStep(step + 1);
+    if (canProceed() && step < 9) setStep(step + 1);
   };
 
   const prevStep = () => {
@@ -109,9 +119,15 @@ export default function IntakePage() {
 
     const profile = {
       location: form.location,
+      age: parseInt(form.age) || 0,
+      gender: form.gender,
+      is_pregnant: form.is_pregnant,
+      is_student: form.is_student,
       employment_status: form.employment_status,
       income_range: form.income_range,
       dependents: parseInt(form.dependents) || 0,
+      has_dependents_under_5: form.has_dependents_under_5,
+      has_dependents_under_19: form.has_dependents_under_19,
       housing_status: form.housing_status,
       disability_status: form.disability_status || "none",
     };
@@ -198,6 +214,88 @@ export default function IntakePage() {
         return (
           <div className="card animate-in">
             <div className="card-header">
+              <div className="card-icon blue">👤</div>
+              <div>
+                <div className="card-title">Demographics</div>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginTop: "4px" }}>
+                  A few details about yourself
+                </p>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="age">Age</label>
+              <input
+                id="age"
+                type="number"
+                className="form-input"
+                min="0"
+                max="120"
+                value={form.age}
+                onChange={(e) => updateField("age", e.target.value)}
+                placeholder="e.g. 35"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="gender">Gender</label>
+              <select
+                id="gender"
+                className="form-select"
+                value={form.gender}
+                onChange={(e) => updateField("gender", e.target.value)}
+              >
+                <option value="">Select your gender...</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non-binary">Non-binary</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="card animate-in">
+            <div className="card-header">
+              <div className="card-icon amber">⭐</div>
+              <div>
+                <div className="card-title">Special Status</div>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginTop: "4px" }}>
+                  Certain statuses can qualify you for specific programs
+                </p>
+              </div>
+            </div>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <input
+                id="is_pregnant"
+                type="checkbox"
+                checked={form.is_pregnant}
+                onChange={(e) => updateField("is_pregnant", e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+              />
+              <label htmlFor="is_pregnant" style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                I am currently pregnant or postpartum (within the last year)
+              </label>
+            </div>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <input
+                id="is_student"
+                type="checkbox"
+                checked={form.is_student}
+                onChange={(e) => updateField("is_student", e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+              />
+              <label htmlFor="is_student" style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                I am currently enrolled as a college or university student
+              </label>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="card animate-in">
+            <div className="card-header">
               <div className="card-icon teal">💼</div>
               <div>
                 <div className="card-title">Employment Status</div>
@@ -223,7 +321,7 @@ export default function IntakePage() {
           </div>
         );
 
-      case 3:
+      case 5:
         return (
           <div className="card animate-in">
             <div className="card-header">
@@ -252,7 +350,7 @@ export default function IntakePage() {
           </div>
         );
 
-      case 4:
+      case 6:
         return (
           <div className="card animate-in">
             <div className="card-header">
@@ -277,10 +375,38 @@ export default function IntakePage() {
                 placeholder="0"
               />
             </div>
+            {form.dependents > 0 && (
+              <>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', marginTop: '16px' }}>
+                  <input
+                    id="has_dependents_under_5"
+                    type="checkbox"
+                    checked={form.has_dependents_under_5}
+                    onChange={(e) => updateField("has_dependents_under_5", e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+                  />
+                  <label htmlFor="has_dependents_under_5" style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    Do you have any dependents under age 5? (Infants/Toddlers)
+                  </label>
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', marginTop: '8px' }}>
+                  <input
+                    id="has_dependents_under_19"
+                    type="checkbox"
+                    checked={form.has_dependents_under_19}
+                    onChange={(e) => updateField("has_dependents_under_19", e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+                  />
+                  <label htmlFor="has_dependents_under_19" style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    Do you have any dependents under age 19? (Children/Teens)
+                  </label>
+                </div>
+              </>
+            )}
           </div>
         );
 
-      case 5:
+      case 7:
         return (
           <div className="card animate-in">
             <div className="card-header">
@@ -309,7 +435,7 @@ export default function IntakePage() {
           </div>
         );
 
-      case 6:
+      case 8:
         return (
           <div className="card animate-in">
             <div className="card-header">
@@ -352,7 +478,7 @@ export default function IntakePage() {
           </div>
         );
 
-      case 7:
+      case 9:
         return (
           <div className="card animate-in">
             <div className="card-header">
@@ -367,9 +493,17 @@ export default function IntakePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {[
                 ["Location", form.location],
+                ["Age", form.age],
+                ["Gender", form.gender ? form.gender.charAt(0).toUpperCase() + form.gender.slice(1) : "–"],
+                ["Pregnant/Postpartum", form.is_pregnant ? "Yes" : "No"],
+                ["College Student", form.is_student ? "Yes" : "No"],
                 ["Employment", EMPLOYMENT_OPTIONS.find(o => o.value === form.employment_status)?.label || "–"],
                 ["Income Range", INCOME_OPTIONS.find(o => o.value === form.income_range)?.label || "–"],
                 ["Dependents", form.dependents],
+                ...(form.dependents > 0 ? [
+                  ["Dependents < 5 yrs", form.has_dependents_under_5 ? "Yes" : "No"],
+                  ["Dependents < 19 yrs", form.has_dependents_under_19 ? "Yes" : "No"]
+                ] : []),
                 ["Housing", HOUSING_OPTIONS.find(o => o.value === form.housing_status)?.label || "–"],
                 ["Disability", DISABILITY_OPTIONS.find(o => o.value === form.disability_status)?.label || "None"],
               ].map(([label, value]) => (
@@ -421,7 +555,7 @@ export default function IntakePage() {
       {/* Progress Steps */}
       <div className="steps">
         {STEPS.map((s, i) => (
-          <div key={s.id} style={{ display: "flex", alignItems: "center" }}>
+          <div key={s.id} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
             <div className={`step ${step === s.id ? "active" : ""} ${step > s.id ? "completed" : ""}`}>
               <div className="step-number">
                 {step > s.id ? "✓" : s.id}
@@ -456,7 +590,7 @@ export default function IntakePage() {
         >
           ← Back
         </button>
-        {step < 7 ? (
+        {step < 9 ? (
           <button className="btn btn-primary" onClick={nextStep} disabled={!canProceed()}>
             Continue →
           </button>

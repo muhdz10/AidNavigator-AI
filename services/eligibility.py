@@ -134,7 +134,80 @@ def check_liheap(profile: UserProfile) -> dict:
     return {"program": "LIHEAP", "eligible": eligible, "reasons": reasons}
 
 
+def check_wic(profile: UserProfile) -> dict:
+    eligible = False
+    reasons = []
+    if profile.is_pregnant:
+        eligible = True
+        reasons.append("Pregnant or postpartum women meet categorical eligibility for WIC.")
+    if profile.has_dependents_under_5:
+        eligible = True
+        reasons.append("Having infants or children under age 5 meets categorical eligibility.")
+        
+    if eligible:
+        income = _parse_income_midpoint(profile.income_range)
+        hh = _household_size(profile)
+        fpl = _fpl_for_size(hh)
+        t185 = int(fpl * 1.85)
+        if income <= t185:
+            reasons.append(f"Income (~${income:,}/yr) ≤ 185% FPL (${t185:,}).")
+        else:
+            eligible = False
+            reasons.append(f"Income (~${income:,}/yr) exceeds 185% FPL (${t185:,}).")
+
+    if not profile.is_pregnant and not profile.has_dependents_under_5:
+        reasons.append("Does not meet categorical criteria (not pregnant, no dependents under 5).")
+        
+    return {"program": "WIC", "eligible": eligible, "reasons": reasons}
+
+def check_chip(profile: UserProfile) -> dict:
+    eligible = False
+    reasons = []
+    if profile.has_dependents_under_19:
+        eligible = True
+        reasons.append("Children under 19 are the target population for CHIP.")
+    elif profile.is_pregnant:
+        eligible = True
+        reasons.append("Some states provide CHIP coverage to pregnant women.")
+        
+    if eligible:
+        income = _parse_income_midpoint(profile.income_range)
+        hh = _household_size(profile)
+        fpl = _fpl_for_size(hh)
+        t300 = int(fpl * 3.0)
+        if income <= t300:
+            reasons.append(f"Income (~${income:,}/yr) is typically within CHIP limits (up to 300% FPL).")
+        else:
+            eligible = False
+            reasons.append(f"Income (~${income:,}/yr) may exceed typical CHIP limits.")
+            
+    return {"program": "CHIP", "eligible": eligible, "reasons": reasons}
+
+def check_ssi(profile: UserProfile) -> dict:
+    eligible = False
+    reasons = []
+    if getattr(profile, 'age', 0) >= 65:
+        eligible = True
+        reasons.append(f"Age {profile.age} meets categorical eligibility (65 or older).")
+    elif profile.disability_status and profile.disability_status not in ("none", "prefer_not_to_say"):
+        eligible = True
+        reasons.append("Disability status meets categorical eligibility for SSI.")
+        
+    if eligible:
+        income = _parse_income_midpoint(profile.income_range)
+        if income > 24000:  # Roughly $2k/month limit proxy
+            eligible = False
+            reasons.append("Income likely exceeds strict SSI limits.")
+        else:
+            reasons.append("Income appears low enough for SSI consideration.")
+            
+    return {"program": "SSI", "eligible": eligible, "reasons": reasons}
+
 def run_eligibility_filters(profile: UserProfile) -> list[dict]:
     """Run all checks, return eligible programs."""
-    checks = [check_snap(profile), check_medicaid(profile), check_section8(profile), check_tanf(profile), check_liheap(profile)]
+    checks = [
+        check_snap(profile), check_medicaid(profile), check_section8(profile),
+        check_tanf(profile), check_liheap(profile), check_wic(profile),
+        check_chip(profile), check_ssi(profile)
+    ]
     return [c for c in checks if c["eligible"]]

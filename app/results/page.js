@@ -47,6 +47,53 @@ export default function ResultsPage() {
     "Section 8 Housing": "🏠",
     TANF: "👨‍👩‍👧",
     LIHEAP: "⚡",
+    WIC: "🍼",
+    SSI: "💵",
+    CHIP: "🧸",
+  };
+
+  const programFullNames = {
+    SNAP: "Supplemental Nutrition Assistance Program",
+    TANF: "Temporary Assistance for Needy Families",
+    LIHEAP: "Low Income Home Energy Assistance Program",
+    WIC: "Special Supplemental Nutrition Program for Women, Infants, and Children",
+    SSI: "Supplemental Security Income",
+    CHIP: "Children's Health Insurance Program",
+  };
+
+  const programBenefits = {
+    SNAP: "Food Assistance",
+    TANF: "Cash Assistance",
+    LIHEAP: "Energy & Utility Assistance",
+    WIC: "Nutrition for Women & Children",
+    SSI: "Disability Cash Assistance",
+    CHIP: "Children's Health Insurance",
+    Medicaid: "Health Coverage",
+    "Section 8 Housing": "Housing & Rent Assistance",
+    CalFresh: "Food Assistance"
+  };
+
+  const getProgramBenefit = (name) => {
+    for (const [key, benefit] of Object.entries(programBenefits)) {
+      if (name.includes(key)) {
+        return benefit;
+      }
+    }
+    return "Government Assistance";
+  };
+
+  const getProgramDisplayName = (name) => {
+    let displayName = name;
+    for (const [acronym, fullName] of Object.entries(programFullNames)) {
+      // If the name exactly matches the acronym or contains the acronym as a standalone word
+      // but doesn't already contain the full name
+      const regex = new RegExp(`\\b${acronym}\\b`, "i");
+      if (regex.test(name) && !name.toLowerCase().includes(fullName.toLowerCase())) {
+        displayName = `${name} (${fullName})`;
+        break; // Only expand the first matched acronym to keep it clean
+      }
+    }
+    return displayName;
   };
 
   return (
@@ -95,12 +142,17 @@ export default function ResultsPage() {
         <div className="results-grid">
           {results.programs.map((prog, i) => (
             <div key={i} className="program-card animate-in">
-              <div className="program-name">
-                <span style={{ fontSize: "1.5rem" }}>
-                  {programIcons[prog.name] || "📄"}
-                </span>
-                {prog.name}
-                <span className="program-badge">May Qualify</span>
+              <div style={{ marginBottom: "var(--space-md)" }}>
+                <div className="program-name" style={{ marginBottom: "4px" }}>
+                  <span style={{ fontSize: "1.5rem" }}>
+                    {programIcons[prog.name] || "📄"}
+                  </span>
+                  {getProgramDisplayName(prog.name)}
+                  <span className="program-badge">May Qualify</span>
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--primary-light)", fontWeight: 500, marginLeft: "36px" }}>
+                  {getProgramBenefit(prog.name)}
+                </div>
               </div>
 
               <div className="program-reason">{prog.reason}</div>
@@ -136,7 +188,22 @@ export default function ResultsPage() {
           <div className="sources-title">📚 Sources Used</div>
           <ul className="sources-list">
             {results.sources.map((src, i) => (
-              <li key={i}>{src}</li>
+              <li key={i}>
+                {src.url && src.url !== "#" ? (
+                  <a 
+                    href={src.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: "var(--primary-light)", textDecoration: "none" }}
+                    onMouseOver={(e) => e.currentTarget.style.textDecoration = "underline"}
+                    onMouseOut={(e) => e.currentTarget.style.textDecoration = "none"}
+                  >
+                    {src.name} ↗
+                  </a>
+                ) : (
+                  src.name || src
+                )}
+              </li>
             ))}
           </ul>
         </div>

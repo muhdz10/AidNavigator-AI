@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
             </a>
             <div className="nav-links">
               <a href="/" className="nav-link">
-                Intake
+                Check Eligibility
               </a>
               <a href="/results" className="nav-link">
                 Results

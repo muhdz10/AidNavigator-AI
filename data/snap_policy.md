@@ -1,3 +1,6 @@
+---
+url: https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program
+---
 # Supplemental Nutrition Assistance Program (SNAP)
 
 ## Program Overview

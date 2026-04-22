@@ -13,10 +13,13 @@ class UserProfile(BaseModel):
     """Structured user intake profile."""
 
     location: str = Field(..., description="U.S. state of residence")
+    age: int = Field(..., ge=0, le=120, description="Age of the applicant")
+    gender: str = Field(..., description="Gender of the applicant (e.g., male, female, non-binary, prefer_not_to_say)")
     employment_status: str = Field(
         ...,
         description="Current employment status",
     )
+    is_student: bool = Field(default=False, description="Is the applicant currently enrolled as a student?")
     income_range: str = Field(
         ...,
         description="Annual household income range",
@@ -24,6 +27,8 @@ class UserProfile(BaseModel):
     dependents: int = Field(
         ..., ge=0, le=20, description="Number of dependents in household"
     )
+    has_dependents_under_5: bool = Field(default=False, description="Does the applicant have dependents under age 5?")
+    has_dependents_under_19: bool = Field(default=False, description="Does the applicant have dependents under age 19?")
     housing_status: str = Field(
         ...,
         description="Current housing situation",
@@ -32,6 +37,7 @@ class UserProfile(BaseModel):
         None,
         description="Disability status (optional)",
     )
+    is_pregnant: bool = Field(default=False, description="Is the applicant currently pregnant or postpartum?")
 
 
 class IntakeRequest(BaseModel):
@@ -61,6 +67,12 @@ class Program(BaseModel):
     )
 
 
+class Source(BaseModel):
+    """A policy document source with its URL."""
+    name: str
+    url: str
+
+
 class EligibilityResponse(BaseModel):
     """Structured response from the eligibility endpoint."""
 
@@ -71,7 +83,7 @@ class EligibilityResponse(BaseModel):
         "the official agency. Please contact your local office to confirm "
         "eligibility and begin the application process."
     )
-    sources: list[str] = Field(
+    sources: list[Source] = Field(
         ..., description="Policy document sources used in analysis"
     )
 

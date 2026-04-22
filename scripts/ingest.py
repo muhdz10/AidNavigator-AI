@@ -28,15 +28,42 @@ VECTORSTORE_DIR = Path(__file__).parent.parent / "vectorstore"
 
 
 def load_documents() -> list[Document]:
-    """Load all markdown policy documents from data/."""
+    """Load all markdown policy documents from data/ and parse frontmatter."""
     documents = []
     for filepath in sorted(DATA_DIR.glob("*.md")):
         print(f"  Loading: {filepath.name}")
         text = filepath.read_text(encoding="utf-8")
+        
+        url = ""
+        # Very simple frontmatter parser
+        if text.startswith("---"):
+            parts = text.split("---", 2)
+            if len(parts) >= 3:
+                frontmatter = parts[1]
+                text = parts[2].strip()
+                for line in frontmatter.strip().split("\n"):
+                    if line.startswith("url:"):
+                        url = line.replace("url:", "").strip()
+        
+        source_name = filepath.stem.replace("_", " ").title()
+        
+        # Override specific names for better display
+        if filepath.stem == "calfresh_policy":
+            source_name = "CalFresh (California SNAP)"
+        elif filepath.stem == "ssi_policy":
+            source_name = "Supplemental Security Income (SSI)"
+        elif filepath.stem == "wic_policy":
+            source_name = "WIC Program"
+        elif filepath.stem == "chip_policy":
+            source_name = "Children's Health Insurance Program (CHIP)"
+            
         documents.append(
             Document(
                 page_content=text,
-                metadata={"source": filepath.stem.replace("_", " ").title()},
+                metadata={
+                    "source": source_name,
+                    "url": url
+                },
             )
         )
     print(f"  Loaded {len(documents)} documents.\n")

@@ -83,6 +83,8 @@ class TraceCollector:
             "profile": None,
             "retrieved_chunks": None,
             "final_prompt": None,
+            "llm_used": False,
+            "fallback_used": False,
             "output": None,
             "flags": [],
             "blocked": False,
@@ -101,8 +103,8 @@ class TraceCollector:
         """Log the structured user profile."""
         self._data["profile"] = profile
 
-    def log_retrieval(self, chunks: list[str]):
-        """Log the retrieved document chunks."""
+    def log_retrieval(self, chunks: list[dict]):
+        """Log the retrieved document chunks (with metadata)."""
         self._data["retrieved_chunks"] = chunks
 
     def log_prompt(self, prompt: str):
@@ -112,6 +114,12 @@ class TraceCollector:
     def log_output(self, output: dict):
         """Log the final structured output."""
         self._data["output"] = output
+
+    def log_llm_used(self, used: bool):
+        self._data["llm_used"] = used
+
+    def log_fallback_used(self, used: bool):
+        self._data["fallback_used"] = used
 
     def log_flag(self, flag: str):
         """Log a flag (security issue, validation issue, etc.)."""

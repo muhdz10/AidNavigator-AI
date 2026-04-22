@@ -1,13 +1,14 @@
 """
 LLM service for AidNavigator AI.
 
-Handles interaction with Google Gemini via LangChain.
+Handles interaction with Groq LLM via LangChain.
 Uses a strong system prompt enforcing safety and structured output.
 """
 
 import os
 import json
-from langchain_google_genai import ChatGoogleGenerativeAI
+import re
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from models.schemas import UserProfile
 
@@ -42,8 +43,7 @@ You MUST respond with valid JSON only (no markdown, no code fences). Use this ex
       "reason": "Detailed explanation of why this person may be eligible, referencing specific policy criteria...",
       "documents_required": ["Document 1", "Document 2"]
     }
-  ],
-  "sources": ["Source 1", "Source 2"]
+  ]
 }
 
 Do NOT include any text outside the JSON object. Do NOT use markdown code fences."""
@@ -76,9 +76,15 @@ def build_prompt(
     profile_text = f"""
 ## User Profile:
 - Location: {profile.location}
+- Age: {profile.age}
+- Gender: {profile.gender.replace('_', ' ')}
+- Pregnant/Postpartum: {'Yes' if profile.is_pregnant else 'No'}
+- College Student: {'Yes' if profile.is_student else 'No'}
 - Employment Status: {profile.employment_status.replace('_', ' ')}
 - Annual Income Range: ${profile.income_range}
 - Number of Dependents: {profile.dependents}
+- Has Dependents under Age 5: {'Yes' if profile.has_dependents_under_5 else 'No'}
+- Has Dependents under Age 19: {'Yes' if profile.has_dependents_under_19 else 'No'}
 - Housing Status: {profile.housing_status.replace('_', ' ')}
 - Disability Status: {profile.disability_status or 'Not specified'}
 """
@@ -100,22 +106,22 @@ def generate_eligibility_response(
     retrieved_chunks: list[dict],
 ) -> tuple[dict, str]:
     """
-    Generate an eligibility response using Google Gemini.
+    Generate an eligibility response using Groq LLM.
 
     Returns:
         tuple: (parsed_response_dict, full_prompt_string)
     """
-    model_name = os.getenv("GOOGLE_MODEL", "gemini-2.5-flash")
-    api_key = os.getenv("GOOGLE_API_KEY")
+    model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    api_key = os.getenv("GROQ_API_KEY")
 
     if not api_key:
-        raise ValueError("GOOGLE_API_KEY environment variable is not set.")
+        raise ValueError("GROQ_API_KEY environment variable is not set.")
 
-    llm = ChatGoogleGenerativeAI(
+    llm = ChatGroq(
         model=model_name,
-        google_api_key=api_key,
+        api_key=api_key,
         temperature=0.2,
-        max_output_tokens=16384,
+        max_tokens=2048,
     )
 
     prompt = build_prompt(profile, candidate_programs, retrieved_chunks)
@@ -129,7 +135,6 @@ def generate_eligibility_response(
     raw_text = response.content.strip()
 
     # Clean markdown fences if present (handles ```json, ```JSON, ``` etc.)
-    import re
     fence_match = re.match(r'^```(?:json|JSON)?\s*\n(.*?)\n```\s*$', raw_text, re.DOTALL)
     if fence_match:
         raw_text = fence_match.group(1).strip()
@@ -174,21 +179,18 @@ def generate_eligibility_response(
                 except json.JSONDecodeError:
                     parsed = {
                         "programs": [],
-                        "sources": [],
                         "error": "Failed to parse LLM response",
                         "raw_response": raw_text[:500],
                     }
             else:
                 parsed = {
                     "programs": [],
-                    "sources": [],
                     "error": "Failed to parse LLM response",
                     "raw_response": raw_text[:500],
                 }
         else:
             parsed = {
                 "programs": [],
-                "sources": [],
                 "error": "Failed to parse LLM response",
                 "raw_response": raw_text[:500],
             }

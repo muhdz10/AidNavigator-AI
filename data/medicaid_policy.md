@@ -1,3 +1,6 @@
+---
+url: https://www.medicaid.gov/medicaid/eligibility/index.html
+---
 # Medicaid — Health Coverage for Low-Income Individuals and Families
 
 ## Program Overview

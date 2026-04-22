@@ -31,6 +31,7 @@ from models.schemas import (
     EligibilityRequest,
     EligibilityResponse,
     Program,
+    Source,
 )
 from services.guardrails import sanitize_input, validate_output, validate_profile_fields
 from services.tracing import TraceCollector, get_all_traces, get_traces_by_session
@@ -195,7 +196,7 @@ async def eligibility(request: EligibilityRequest):
         retrieved_chunks = retrieve_relevant_chunks(
             request.profile, program_names, top_k=8
         )
-        trace.log_retrieval([c["content"][:200] + "..." for c in retrieved_chunks])
+        trace.log_retrieval(retrieved_chunks)
     except FileNotFoundError:
         trace.log_flag("VECTORSTORE_MISSING: Using rule-based results only")
     except Exception as e:
@@ -212,6 +213,7 @@ async def eligibility(request: EligibilityRequest):
             )
             trace.log_prompt(full_prompt)
             trace.log_output(llm_response)
+            trace.log_llm_used(True)
         except Exception as e:
             trace.log_error(f"LLM error: {str(e)}")
             trace.log_flag(f"LLM_ERROR: {str(e)}")
@@ -219,6 +221,18 @@ async def eligibility(request: EligibilityRequest):
     # Step 4: Build response (from LLM or fallback to rules)
     programs = []
     sources = []
+
+    # Extract sources deterministically from the RAG chunks
+    # This guarantees sources are real and exactly what was provided to the LLM
+    unique_sources = {}
+    for chunk in retrieved_chunks:
+        source_name = chunk.get("source", "Unknown Policy Document")
+        # Ensure url fallback for older chunks without a URL
+        url = chunk.get("url") or "#"
+        unique_sources[source_name] = url
+        
+    for name, url in unique_sources.items():
+        sources.append(Source(name=name, url=url))
 
     if llm_response and "programs" in llm_response:
         # Validate each program's reason text
@@ -233,10 +247,10 @@ async def eligibility(request: EligibilityRequest):
                     documents_required=prog.get("documents_required", []),
                 )
             )
-        sources = llm_response.get("sources", [])
     else:
         # Fallback: use rule-based results
-        trace.log_flag("FALLBACK: Using rule-based results (no LLM)")
+        trace.log_fallback_used(True)
+        trace.log_flag("FALLBACK_USED: Returning rule-based pre-filters")
         doc_map = {
             "SNAP": ["Government ID", "Proof of income", "Social Security numbers",
                       "Proof of residency", "Bank statements"],
@@ -257,7 +271,10 @@ async def eligibility(request: EligibilityRequest):
                     documents_required=doc_map.get(cp["program"], ["Contact local office"]),
                 )
             )
-        sources = ["Federal policy guidelines", "Rule-based eligibility screening"]
+            
+        # If there were no RAG sources (e.g. vectorstore missing), add a fallback source
+        if not sources:
+            sources.append(Source(name="Rule-based eligibility screening", url="#"))
 
     trace.save()
 

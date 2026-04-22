@@ -37,17 +37,32 @@ def load_vectorstore():
 def profile_to_query(profile: UserProfile) -> str:
     """Convert a user profile into a natural language retrieval query."""
     parts = [
-        f"Government benefits eligibility for a person in {profile.location}",
+        f"Government benefits eligibility for a {profile.age} year old {profile.gender} in {profile.location}",
         f"who is {profile.employment_status.replace('_', ' ')}",
         f"with annual income in the {profile.income_range} range",
-        f"with {profile.dependents} dependent(s)",
         f"housing status: {profile.housing_status.replace('_', ' ')}",
     ]
+    
+    if profile.dependents > 0:
+        dep_str = f"with {profile.dependents} dependent(s)"
+        if profile.has_dependents_under_5:
+            dep_str += " including infants/children under age 5"
+        elif profile.has_dependents_under_19:
+            dep_str += " including children under age 19"
+        parts.append(dep_str)
+        
+    if profile.is_pregnant:
+        parts.append("who is pregnant or postpartum")
+        
+    if profile.is_student:
+        parts.append("who is enrolled as a college student")
+
     if profile.disability_status and profile.disability_status not in (
         "none",
         "prefer_not_to_say",
     ):
         parts.append(f"disability status: {profile.disability_status}")
+        
     return ", ".join(parts)
 
 
@@ -78,6 +93,7 @@ def retrieve_relevant_chunks(
             {
                 "content": doc.page_content,
                 "source": doc.metadata.get("source", "Unknown"),
+                "url": doc.metadata.get("url", "#"),
                 "score": float(score),
             }
         )

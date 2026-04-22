@@ -196,6 +196,22 @@ def validate_profile_fields(profile_dict: dict) -> list[str]:
     Returns a list of flags for any suspicious field values.
     """
     flags = []
+    
+    # Custom validation for new fields
+    age = profile_dict.get("age")
+    if age is not None:
+        try:
+            age_int = int(age)
+            if age_int < 0 or age_int > 120:
+                flags.append("FIELD_AGE: Age is outside realistic bounds (0-120)")
+        except ValueError:
+            flags.append("FIELD_AGE: Age must be a number")
+            
+    gender = profile_dict.get("gender")
+    valid_genders = ["male", "female", "non-binary", "prefer_not_to_say"]
+    if gender and isinstance(gender, str) and gender.lower() not in valid_genders:
+        flags.append(f"FIELD_GENDER: Invalid gender option '{gender}'")
+
     for field_name, value in profile_dict.items():
         if isinstance(value, str) and len(value) > 2:
             result = sanitize_input(value, max_length=200)
