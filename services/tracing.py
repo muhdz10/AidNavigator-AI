@@ -12,8 +12,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-# Database path
-DB_PATH = Path(__file__).parent.parent / "aidnavigator.db"
+# Database path — use /tmp on Vercel (read-only filesystem)
+import os
+if os.environ.get("VERCEL"):
+    DB_PATH = Path("/tmp/aidnavigator.db")
+else:
+    DB_PATH = Path(__file__).parent.parent / "aidnavigator.db"
 
 
 def _get_connection() -> sqlite3.Connection:
@@ -25,25 +29,28 @@ def _get_connection() -> sqlite3.Connection:
 
 def init_db():
     """Initialize the traces table if it doesn't exist."""
-    conn = _get_connection()
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS traces (
-            id TEXT PRIMARY KEY,
-            session_id TEXT NOT NULL,
-            timestamp TEXT NOT NULL,
-            data TEXT NOT NULL
+    try:
+        conn = _get_connection()
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS traces (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                data TEXT NOT NULL
+            )
+            """
         )
-        """
-    )
-    conn.execute(
-        """
-        CREATE INDEX IF NOT EXISTS idx_traces_session
-        ON traces (session_id)
-        """
-    )
-    conn.commit()
-    conn.close()
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_traces_session
+            ON traces (session_id)
+            """
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Could not initialize trace DB: {e}")
 
 
 # Initialize on import
@@ -125,13 +132,17 @@ class TraceCollector:
 
     def save(self):
         """Persist the trace to SQLite."""
-        conn = _get_connection()
-        conn.execute(
-            "INSERT INTO traces (id, session_id, timestamp, data) VALUES (?, ?, ?, ?)",
-            (self.id, self.session_id, self.timestamp, json.dumps(self._data)),
-        )
-        conn.commit()
-        conn.close()
+        try:
+            init_db()
+            conn = _get_connection()
+            conn.execute(
+                "INSERT INTO traces (id, session_id, timestamp, data) VALUES (?, ?, ?, ?)",
+                (self.id, self.session_id, self.timestamp, json.dumps(self._data)),
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Warning: Could not save trace: {e}")
 
     def to_dict(self) -> dict:
         """Return the full trace as a dictionary."""
@@ -145,53 +156,66 @@ class TraceCollector:
 
 def get_all_traces(limit: int = 100, offset: int = 0) -> list[dict]:
     """Retrieve all trace logs, newest first."""
-    conn = _get_connection()
-    rows = conn.execute(
-        "SELECT id, session_id, timestamp, data FROM traces ORDER BY timestamp DESC LIMIT ? OFFSET ?",
-        (limit, offset),
-    ).fetchall()
-    conn.close()
+    try:
+        init_db()
+        conn = _get_connection()
+        rows = conn.execute(
+            "SELECT id, session_id, timestamp, data FROM traces ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        ).fetchall()
+        conn.close()
 
-    traces = []
-    for row in rows:
-        data = json.loads(row["data"])
-        traces.append(
-            {
-                "id": row["id"],
-                "session_id": row["session_id"],
-                "timestamp": row["timestamp"],
-                **data,
-            }
-        )
-    return traces
+        traces = []
+        for row in rows:
+            data = json.loads(row["data"])
+            traces.append(
+                {
+                    "id": row["id"],
+                    "session_id": row["session_id"],
+                    "timestamp": row["timestamp"],
+                    **data,
+                }
+            )
+        return traces
+    except Exception as e:
+        print(f"Warning: Could not read traces: {e}")
+        return []
 
 
 def get_traces_by_session(session_id: str) -> list[dict]:
     """Retrieve all traces for a specific session."""
-    conn = _get_connection()
-    rows = conn.execute(
-        "SELECT id, session_id, timestamp, data FROM traces WHERE session_id = ? ORDER BY timestamp DESC",
-        (session_id,),
-    ).fetchall()
-    conn.close()
+    try:
+        init_db()
+        conn = _get_connection()
+        rows = conn.execute(
+            "SELECT id, session_id, timestamp, data FROM traces WHERE session_id = ? ORDER BY timestamp DESC",
+            (session_id,),
+        ).fetchall()
+        conn.close()
 
-    traces = []
-    for row in rows:
-        data = json.loads(row["data"])
-        traces.append(
-            {
-                "id": row["id"],
-                "session_id": row["session_id"],
-                "timestamp": row["timestamp"],
-                **data,
-            }
-        )
-    return traces
+        traces = []
+        for row in rows:
+            data = json.loads(row["data"])
+            traces.append(
+                {
+                    "id": row["id"],
+                    "session_id": row["session_id"],
+                    "timestamp": row["timestamp"],
+                    **data,
+                }
+            )
+        return traces
+    except Exception as e:
+        print(f"Warning: Could not read traces: {e}")
+        return []
 
 
 def clear_all_traces():
     """Clear all trace logs (for development/testing only)."""
-    conn = _get_connection()
-    conn.execute("DELETE FROM traces")
-    conn.commit()
-    conn.close()
+    try:
+        conn = _get_connection()
+        conn.execute("DELETE FROM traces")
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Could not clear traces: {e}")
