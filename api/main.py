@@ -244,6 +244,7 @@ async def eligibility(request: EligibilityRequest):
                 Program(
                     name=prog.get("name", "Unknown"),
                     reason=validated.validated_text,
+                    how_to_apply=prog.get("how_to_apply", "Please visit the official website or contact your local social services office to apply."),
                     documents_required=prog.get("documents_required", []),
                 )
             )
@@ -264,11 +265,13 @@ async def eligibility(request: EligibilityRequest):
                         "Recent utility bill", "Proof of residency"],
         }
         for cp in candidate_programs:
+            name = cp["program"]
             programs.append(
                 Program(
-                    name=cp["program"],
-                    reason=" ".join(cp["reasons"]),
-                    documents_required=doc_map.get(cp["program"], ["Contact local office"]),
+                    name=name,
+                    reason="; ".join(cp.get("reasons", [])),
+                    how_to_apply="Please visit the official website or contact your local social services office to apply.",
+                    documents_required=doc_map.get(name, []),
                 )
             )
             

@@ -62,6 +62,7 @@ class Program(BaseModel):
 
     name: str = Field(..., description="Official program name")
     reason: str = Field(..., description="Why this program was suggested")
+    how_to_apply: str = Field(..., description="Step-by-step instructions on how to apply")
     documents_required: list[str] = Field(
         ..., description="Documents needed to apply"
     )

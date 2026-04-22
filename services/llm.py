@@ -30,7 +30,8 @@ Given the user's profile and the retrieved policy document excerpts below, you m
 1. Identify 2-4 government benefit programs the user may be eligible for.
 2. For each program, explain WHY they may qualify based on specific criteria from the policy documents.
 3. List the required documents for each program application.
-4. Be specific — reference income thresholds, household size requirements, and other concrete criteria from the documents.
+4. Extract specific instructions on HOW to apply from the policy documents (e.g., website links, phone numbers, or steps).
+5. Be specific — reference income thresholds, household size requirements, and other concrete criteria from the documents.
 
 ## OUTPUT FORMAT:
 
@@ -41,6 +42,7 @@ You MUST respond with valid JSON only (no markdown, no code fences). Use this ex
     {
       "name": "Program Name",
       "reason": "Detailed explanation of why this person may be eligible, referencing specific policy criteria...",
+      "how_to_apply": "Specific steps on how to apply, derived from the document...",
       "documents_required": ["Document 1", "Document 2"]
     }
   ]

@@ -157,6 +157,17 @@ export default function ResultsPage() {
 
               <div className="program-reason">{prog.reason}</div>
 
+              {prog.how_to_apply && (
+                <div style={{ marginTop: "12px", padding: "12px", background: "var(--bg-glass-hover)", borderRadius: "var(--radius-sm)", borderLeft: "4px solid var(--primary)" }}>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+                    🚀 How to Apply
+                  </div>
+                  <div style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+                    {prog.how_to_apply}
+                  </div>
+                </div>
+              )}
+
               {prog.documents_required && prog.documents_required.length > 0 && (
                 <div>
                   <div className="docs-title">📋 Required Documents</div>
