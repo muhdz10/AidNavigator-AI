@@ -56,7 +56,7 @@ npm run dev
 
 ### 6. Open the App
 
-Visit [http://localhost:3000](http://localhost:3000)
+Visit [https://aid-navigator-ai.vercel.app/](https://aid-navigator-ai.vercel.app/)
 
 ---
 
