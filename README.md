@@ -8,7 +8,8 @@ A trustworthy AI-powered application that helps users understand which U.S. gove
 
 - **Node.js** 18+ and npm
 - **Python** 3.10+
-- **Google API Key** from [Google AI Studio](https://aistudio.google.com/)
+- **Google API Key** from [Google AI Studio](https://aistudio.google.com/) (for vector embeddings)
+- **Groq API Key** from [Groq Console](https://console.groq.com/) (for fast LLM generation)
 
 ### 1. Clone and Install
 
@@ -28,7 +29,7 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env and add your GOOGLE_API_KEY
+# Edit .env and add your GOOGLE_API_KEY and GROQ_API_KEY
 ```
 
 ### 3. Ingest Policy Documents
@@ -67,13 +68,15 @@ Visit [http://localhost:3000](http://localhost:3000)
 │   ├── page.js             # Multi-step intake form
 │   ├── globals.css          # Design system & styles
 │   ├── results/page.js     # Eligibility results display
-│   └── debug/page.js       # Debug/tracing viewer
+│   ├── transparency/page.js# Debug/tracing viewer
+│   └── components/         # Reusable UI components
+│       └── ModeWrapper.js  # Startup Demo Mode Selection
 ├── api/                    # FastAPI backend
 │   └── main.py             # REST API endpoints
 ├── services/               # Core business logic
 │   ├── rag.py              # RAG pipeline (FAISS retrieval)
 │   ├── guardrails.py       # Input sanitization + output validation
-│   ├── llm.py              # Google Gemini LLM integration
+│   ├── llm.py              # Groq Llama 3 LLM integration
 │   ├── eligibility.py      # Rule-based pre-filtering
 │   └── tracing.py          # Structured logging/tracing
 ├── models/                 # Pydantic data schemas
@@ -116,14 +119,23 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 ---
 
+## 🎭 Demo Modes
+
+AidNavigator AI includes a built-in startup mode selector for testing and demonstrations:
+- **User Mode**: A clean, streamlined interface identical to a real-world production deployment.
+- **Admin Mode**: Unlocks the **AI Transparency Dashboard**, providing deep visibility into prompt construction, guardrail flags, and vector retrieval.
+
+---
+
 ## 🚀 Deploy to Vercel
 
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
-# Set environment variable
+# Set environment variables
 vercel env add GOOGLE_API_KEY
+vercel env add GROQ_API_KEY
 
 # Deploy
 vercel --prod
