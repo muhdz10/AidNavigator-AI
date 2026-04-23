@@ -1,4 +1,5 @@
 import "./globals.css";
+import ModeWrapper from "./components/ModeWrapper";
 
 export const metadata = {
   title: "AidNavigator AI — Welfare & Government Benefits Assistant",
@@ -11,26 +12,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <nav className="nav">
-          <div className="nav-inner">
-            <a href="/" className="nav-logo">
-              <div className="nav-logo-icon">🧭</div>
-              AidNavigator AI
-            </a>
-            <div className="nav-links">
-              <a href="/" className="nav-link">
-                Check Eligibility
-              </a>
-              <a href="/results" className="nav-link">
-                Results
-              </a>
-              <a href="/debug" className="nav-link">
-                Debug
-              </a>
-            </div>
-          </div>
-        </nav>
-        {children}
+        <ModeWrapper>
+          {children}
+        </ModeWrapper>
       </body>
     </html>
   );

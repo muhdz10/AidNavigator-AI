@@ -7,6 +7,7 @@ export default function ResultsPage() {
   const router = useRouter();
   const [results, setResults] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [appMode, setAppMode] = useState(null);
 
   useEffect(() => {
     const storedResults = sessionStorage.getItem("aidnavigator_results");
@@ -18,6 +19,7 @@ export default function ResultsPage() {
     if (storedProfile) {
       setProfile(JSON.parse(storedProfile));
     }
+    setAppMode(localStorage.getItem("appMode"));
   }, []);
 
   if (!results) {
@@ -225,9 +227,11 @@ export default function ResultsPage() {
         <button className="btn btn-secondary" onClick={() => router.push("/")}>
           ← Start Over
         </button>
-        <button className="btn btn-ghost" onClick={() => router.push("/debug")}>
-          🔍 View Debug Traces
-        </button>
+        {appMode === "admin" && (
+          <button className="btn btn-ghost" onClick={() => router.push("/transparency")}>
+            🔍 View Debug Traces
+          </button>
+        )}
       </div>
     </main>
   );

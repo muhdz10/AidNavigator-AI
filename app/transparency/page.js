@@ -15,6 +15,8 @@ const FLAG_MAPPING = {
 };
 
 export default function TransparencyDashboard() {
+  const [mode, setMode] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [traces, setTraces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
@@ -40,7 +42,13 @@ export default function TransparencyDashboard() {
   }, [filterSession]);
 
   useEffect(() => {
-    fetchTraces();
+    const savedMode = localStorage.getItem("appMode");
+    setMode(savedMode);
+    setAuthChecked(true);
+    
+    if (savedMode === "admin") {
+      fetchTraces();
+    }
   }, [fetchTraces]);
 
   useEffect(() => {
@@ -78,6 +86,31 @@ export default function TransparencyDashboard() {
     if (filterType === "blocked") return trace.blocked;
     return true;
   });
+
+  if (!authChecked) {
+    return <div style={{ minHeight: "100vh", background: "var(--bg-main)" }} />;
+  }
+
+  if (mode !== "admin") {
+    return (
+      <main className="main" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", textAlign: "center" }}>
+        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
+        <h1 style={{ fontSize: "2rem", marginBottom: "1rem", color: "var(--text-primary)" }}>Access Restricted</h1>
+        <p style={{ color: "var(--text-secondary)", marginBottom: "2rem" }}>
+          The AI Transparency view is available only in Admin Mode.
+        </p>
+        <button 
+          className="btn btn-primary"
+          onClick={() => {
+            localStorage.removeItem("appMode");
+            window.location.href = "/";
+          }}
+        >
+          Change Mode
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="main main-wide">
