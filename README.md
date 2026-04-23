@@ -82,11 +82,15 @@ Visit [http://localhost:3000](http://localhost:3000)
 ├── models/                 # Pydantic data schemas
 │   └── schemas.py          # UserProfile, EligibilityResponse, etc.
 ├── data/                   # Real U.S. policy documents
-│   ├── snap_policy.md      # SNAP (Food Stamps)
+│   ├── calfresh_policy.md  # CalFresh (California SNAP)
+│   ├── chip_policy.md      # CHIP (Children's Health Insurance)
+│   ├── liheap_policy.md    # LIHEAP (Energy Assistance)
 │   ├── medicaid_policy.md  # Medicaid
 │   ├── section8_policy.md  # Section 8 Housing
-│   ├── tanf_policy.md      # TANF
-│   └── liheap_policy.md    # LIHEAP
+│   ├── snap_policy.md      # SNAP (Food Stamps)
+│   ├── ssi_policy.md       # SSI (Supplemental Security Income)
+│   ├── tanf_policy.md      # TANF (Temporary Assistance)
+│   └── wic_policy.md       # WIC (Women, Infants, Children)
 ├── scripts/                # Ingestion & tooling
 │   └── ingest.py           # Document → embeddings → FAISS
 ├── vectorstore/            # Generated FAISS index
